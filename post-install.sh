@@ -307,6 +307,17 @@ wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 sudo dpkg -i google-chrome-stable_current_amd64.deb
 sudo apt -f install -y
 
+## Instalar VirtualBox
+wget -O- https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo gpg --yes --output /usr/share/keyrings/oracle-virtualbox-2016.gpg
+sudo tee /etc/apt/sources.list.d/virtualbox-oracle.list > /dev/null <<'EOF'
+deb [arch=amd64 signed-by=/usr/share/keyrings/oracle-virtualbox-2016.gpg] https://download.virtualbox.org/virtualbox/debian trixie contrib non-free
+EOF
+sudo apt update && sudo apt install -y virtualbox-7.2
+wget https://download.virtualbox.org/virtualbox/7.2.0/Oracle_VirtualBox_Extension_Pack-7.2.0.vbox-extpack
+sudo VBoxManage extpack install --replace Oracle_VirtualBox_Extension_Pack-7.2.0.vbox-extpack --accept-license=eb31505e56e9b4d0fbca139104da41ac6f6b98f8e78968bdf01b1f3da3c4f9ae
+VBoxManage list extpacks
+sudo usermod -aG vboxusers $USER
+
 ## Instalar Wireshark
 sudo apt install -y wireshark
 sudo addgroup -quiet -system wireshark
