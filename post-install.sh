@@ -240,7 +240,7 @@ sudo apt install -y build-essential git dkms make cmake linux-headers-$(uname -r
     firmware-misc-nonfree firmware-realtek util-linux cifs-utils libfuse2 sysfsutils zlib1g-dev libbz2-dev \
     libreadline-dev libsqlite3-dev libncursesw5-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev libelf-dev \
     pkg-config iperf3 libiperf0 sudo apt-transport-https ca-certificates curl wget dirmngr gnupg gnupg-agent openssl libssl-dev \
-    sshfs net-tools libgbm1 libgjs0g jq xz-utils tk-dev inxi ttf-mscorefonts-installer bluez bluez-tools pipewire-audio-client-libraries blueman 
+    sshfs net-tools libgbm1 libgjs0g jq xz-utils tk-dev inxi ttf-mscorefonts-installer bluez bluez-tools pipewire-audio-client-libraries blueman avrdude
 
 ## Instalar software
 sudo apt install -t trixie-backports -y h264enc libx264-165 libx264-dev libx265-215 libx265-dev vulkan-tools \
