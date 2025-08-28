@@ -239,7 +239,7 @@ sudo apt install -y build-essential git dkms make cmake linux-headers-$(uname -r
     amd64-microcode firmware-amd-graphics firmware-iwlwifi firmware-linux firmware-linux-free firmware-linux-nonfree \
     firmware-misc-nonfree firmware-realtek util-linux cifs-utils libfuse2 sysfsutils zlib1g-dev libbz2-dev \
     libreadline-dev libsqlite3-dev libncursesw5-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev libelf-dev \
-    pkg-config iperf3 libiperf0 sudo apt-transport-https ca-certificates curl wget dirmngr gnupg gnupg-agent openssl libssl-dev \
+    pkg-config iperf3 libiperf0 sudo apt-transport-https ca-certificates curl wget dirmngr gnupg gnupg-agent openssl libssl-dev gdisk tpm2-tools cryptsetup lvm2 \
     sshfs net-tools libgbm1 libgjs0g jq xz-utils tk-dev inxi ttf-mscorefonts-installer bluez bluez-tools pipewire-audio-client-libraries blueman avrdude
 
 ## Instalar software
