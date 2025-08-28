@@ -318,6 +318,12 @@ sudo VBoxManage extpack install --replace Oracle_VirtualBox_Extension_Pack-7.2.0
 VBoxManage list extpacks
 sudo usermod -aG vboxusers $USER
 
+## Deshabilitar modulos KVM
+sudo tee /etc/modprobe.d/blacklist-kvm.conf > /dev/null <<'EOF'
+blacklist kvm
+blacklist kvm_amd
+EOF
+
 ## Instalar Wireshark
 sudo apt install -y wireshark
 sudo addgroup -quiet -system wireshark
