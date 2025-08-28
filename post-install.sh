@@ -56,7 +56,6 @@ sudo fallocate -l 16G /swapfile
 sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
-sudo modprobe zswap
 
 ## añadir al /etc/fstab, verificar /dev/nvme1n1pX
 ROOT_UUID=$(blkid -s UUID -o value /dev/nvme1n1p3)
