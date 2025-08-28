@@ -1,4 +1,6 @@
-<img width="400" alt="image" src="https://github.com/user-attachments/assets/de42e1c7-1a69-41bb-a3a5-5715249d72c5" />
+<p align="center">
+  <img width="400" alt="image" src="https://github.com/user-attachments/assets/de42e1c7-1a69-41bb-a3a5-5715249d72c5" />
+</p>
 
 # 🚀 Setup Debian 13
 
