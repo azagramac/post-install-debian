@@ -364,6 +364,36 @@ for module in k10temp ryzen_smu microcode; do
     fi
 done
 
+echo -e "\n[Wi-Fi / Bluetooth]"
+for module in iwlwifi btusb; do
+    if lsmod | grep -q "^$module"; then
+        STATUS="cargado ✅"
+    else
+        STATUS="NO cargado ❌"
+    fi
+
+    case $module in
+        iwlwifi)
+            BLOCKED=$(rfkill list wifi | grep -i "Soft blocked" | awk '{print $3}')
+            if [ "$BLOCKED" = "no" ]; then
+                BLOCK_STATUS="activo 🟢"
+            else
+                BLOCK_STATUS="bloqueado ⚠️"
+            fi
+            echo "Módulo Wi-Fi ($module): $STATUS, Soft blocked: $BLOCK_STATUS"
+            ;;
+        btusb)
+            BLOCKED=$(rfkill list bluetooth | grep -i "Soft blocked" | awk '{print $3}')
+            if [ "$BLOCKED" = "no" ]; then
+                BLOCK_STATUS="activo 🟢"
+            else
+                BLOCK_STATUS="bloqueado ⚠️"
+            fi
+            echo "Módulo Bluetooth ($module): $STATUS, Soft blocked: $BLOCK_STATUS"
+            ;;
+    esac
+done
+
 ## Limpiar y reiniciar
 sudo apt clean all
 sudo apt autoremove -y
