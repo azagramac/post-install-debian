@@ -331,6 +331,18 @@ sudo setcap cap_net_raw,cap_net_admin=eip /usr/bin/dumpcap
 sudo usermod -aG wireshark $USER
 sudo dpkg-reconfigure wireshark-common
 
+## Instalar Firefox y Thunderbird
+wget -q https://packages.mozilla.org/apt/repo-signing-key.gpg -O- | sudo tee /etc/apt/keyrings/packages.mozilla.org.asc > /dev/null
+sudo tee /etc/apt/sources.list.d/mozilla.list <<'EOF'
+deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main
+EOF
+sudo tee /etc/apt/preferences.d/mozilla <<'EOF'
+Package: *
+Pin: origin packages.mozilla.org
+Pin-Priority: 1000
+EOF
+sudo apt update && sudo apt install -y firefox thunderbird firefox-l10n-es-es thunderbird-l10n-es-es
+
 ## Configuracion Gnome
 sudo -u $USER gsettings set org.gnome.desktop.interface clock-show-weekday true
 sudo -u $USER gsettings set org.gnome.desktop.interface clock-format '24h'
