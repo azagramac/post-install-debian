@@ -333,10 +333,10 @@ sudo dpkg-reconfigure wireshark-common
 
 ## Instalar Firefox y Thunderbird
 wget -q https://packages.mozilla.org/apt/repo-signing-key.gpg -O- | sudo tee /etc/apt/keyrings/packages.mozilla.org.asc > /dev/null
-sudo tee /etc/apt/sources.list.d/mozilla.list <<'EOF'
+sudo tee /etc/apt/sources.list.d/mozilla.list > /dev/null <<'EOF'
 deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main
 EOF
-sudo tee /etc/apt/preferences.d/mozilla <<'EOF'
+sudo tee /etc/apt/preferences.d/mozilla > /dev/null <<'EOF'
 Package: *
 Pin: origin packages.mozilla.org
 Pin-Priority: 1000
