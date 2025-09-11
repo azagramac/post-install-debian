@@ -235,7 +235,7 @@ EOF
 sudo apt update && sudo apt upgrade -y
 
 ## Instalar paquetes
-sudo apt install -y build-essential git dkms make cmake linux-headers-$(uname -r) bc bison flex rsync \
+sudo apt install -y build-essential git dkms make cmake linux-headers-$(uname -r) bc bison flex rsync ethtool \
     amd64-microcode firmware-amd-graphics firmware-iwlwifi firmware-linux firmware-linux-free firmware-linux-nonfree \
     firmware-misc-nonfree firmware-realtek util-linux cifs-utils libfuse2 sysfsutils zlib1g-dev libbz2-dev \
     libreadline-dev libsqlite3-dev libncursesw5-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev libelf-dev \
@@ -353,6 +353,27 @@ sudo -u $USER gsettings set org.gnome.desktop.peripherals.mouse speed 0.5
 sudo -u $USER gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
 sudo -u $USER gsettings set org.gnome.desktop.session idle-delay 900
 sudo -u $USER gsettings set org.gnome.mutter center-new-windows true
+
+## Disable offloads
+device="enp5s0"
+sudo tee /etc/systemd/system/offloads-${device}.service > /dev/null <<'EOF'"$service-file" <<EOF
+[Unit]
+Description=Disable GRO/GSO/TSO/LRO in ${INTERFAZ}
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/ethtool -K ${device} gro off gso off tso off lro off
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable "offloads-${device}.service"
+systemctl start "offloads-${device}.service"
+systemctl status "offloads-${device}.service" --no-pager
 
 ## Verificar
 echo -e "\n[GPU: info resumida]"
