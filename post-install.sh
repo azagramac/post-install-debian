@@ -354,6 +354,27 @@ sudo -u $USER gsettings set org.gnome.settings-daemon.plugins.power sleep-inacti
 sudo -u $USER gsettings set org.gnome.desktop.session idle-delay 900
 sudo -u $USER gsettings set org.gnome.mutter center-new-windows true
 
+## Disable offloads
+device="enp5s0"
+sudo tee /etc/systemd/system/offloads-${device}.service > /dev/null <<'EOF'"$service-file" <<EOF
+[Unit]
+Description=Disable GRO/GSO/TSO/LRO in ${INTERFAZ}
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/ethtool -K ${device} gro off gso off tso off lro off
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable "offloads-${device}.service"
+systemctl start "offloads-${device}.service"
+systemctl status "offloads-${device}.service" --no-pager
+
 ## Verificar
 echo -e "\n[GPU: info resumida]"
 inxi -G
