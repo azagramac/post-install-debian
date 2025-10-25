@@ -1,0 +1,50 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Exec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 /usr/lib/firefox/firefox%u
+Terminal=false
+X-MultipleArgs=false
+Icon=firefox
+StartupWMClass=firefox
+Categories=GNOME;GTK;Network;WebBrowser;
+MimeType=application/json;application/pdf;application/rdf+xml;application/rss+xml;application/x-xpinstall;application/xhtml+xml;application/xml;audio/flac;audio/ogg;audio/webm;image/avif;image/gif;image/jpeg;image/png;image/svg+xml;image/webp;text/html;text/xml;video/ogg;video/webm;x-scheme-handler/chrome;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/mailto;
+StartupNotify=true
+Actions=new-window;new-private-window;open-profile-manager;
+
+Name=Firefox
+Name[en_GB]=Firefox
+Name[es_ES]=Firefox
+
+Comment=Fast and private browser
+Comment[en_GB]=Fast and private browser
+Comment[es_ES]=Navegador rápido y privado
+
+GenericName=Web Browser
+GenericName[en_GB]=Web Browser
+GenericName[es_ES]=Navegador web
+
+Keywords=Internet;WWW;Browser;Web;Explorer;
+Keywords[en_GB]=Internet;WWW;Browser;Web;Explorer;
+Keywords[es_ES]=Internet;WWW;Navegador;Web;Explorador;
+
+X-GNOME-FullName=Mozilla Firefox
+X-GNOME-FullName[en_GB]=Mozilla Firefox
+X-GNOME-FullName[es_ES]=Mozilla Firefox
+
+[Desktop Action new-window]
+Exec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 /usr/lib/firefox/firefox --new-window %u
+Name=New Window
+Name[en_GB]=New Window
+Name[es_ES]=Nueva ventana
+
+[Desktop Action new-private-window]
+EExec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 /usr/lib/firefox/firefox --private-window %u
+Name=New Private Window
+Name[en_GB]=New Private Window
+Name[es_ES]=Nueva ventana privada
+
+[Desktop Action open-profile-manager]
+Exec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 /usr/lib/firefox/firefox --ProfileManager
+Name=Open Profile Manager
+Name[en_GB]=Open Profile Manager
+Name[es_ES]=Abrir administrador de perfile
