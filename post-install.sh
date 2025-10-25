@@ -323,6 +323,14 @@ blacklist kvm
 blacklist kvm_amd
 EOF
 
+## Instalar Spotify
+curl -sS https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg
+sudo tee /etc/apt/sources.list.d/spotify.list > /dev/null <<'EOF'
+deb https://repository.spotify.com stable non-free
+EOF
+sudo apt update
+sudo apt install -y spotify-client
+
 ## Instalar Wireshark
 sudo apt install -y wireshark
 sudo addgroup -quiet -system wireshark
