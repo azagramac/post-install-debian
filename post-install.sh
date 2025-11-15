@@ -82,6 +82,9 @@ UUID=$EFI_UUID	/boot/efi	vfat	umask=0077	0	1
 
 # Home, /home
 UUID=$HOME_UUID	/home	ext4	relatime	0	2
+
+# NFS
+$IP_NAS:/volume1/folder    /mnt/nas/folder	nfs	rw,vers=4,noatime,hard,x-systemd.automount,x-systemd.idle-timeout=300,_netdev	0	0
 EOF
 
 ## Añadir blacklist
