@@ -334,9 +334,6 @@ EOF
 sudo apt update
 sudo apt install -y spotify-client
 
-## Instalar binario repo, Android AOSP
-curl https://storage.googleapis.com/git-repo-downloads/repo > repo && chmod a+x repo && sudo mv repo /usr/local/bin/repo
-
 ## Instalar Wireshark
 sudo apt install -y wireshark
 sudo addgroup -quiet -system wireshark
