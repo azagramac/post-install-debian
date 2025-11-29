@@ -337,6 +337,9 @@ sudo apt install -y spotify-client
 ## Instalar binario repo, Android AOSP
 curl https://storage.googleapis.com/git-repo-downloads/repo > repo && chmod a+x repo && sudo mv repo /usr/local/bin/repo
 
+## Instalar Yubikey
+sudo apt install pcscd pcsc-tools libpam-u2f pamu2fcfg yubico-piv-tool yubikey-manager
+
 ## Instalar Wireshark
 sudo apt install -y wireshark
 sudo addgroup -quiet -system wireshark
