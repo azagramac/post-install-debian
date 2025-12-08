@@ -38,7 +38,7 @@ Name[en_GB]=Open a New Window
 Name[es_ES]=Abrir en nueva ventana
 
 [Desktop Action new-private-window]
-EExec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 /usr/lib64/firefox/firefox --private-window %u
+Exec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 /usr/lib64/firefox/firefox --private-window %u
 Name=Open New Private Window
 Name[en_GB]=Open New Private Window
 Name[es_ES]=Abrir en nueva ventana privada
