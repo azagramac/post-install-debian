@@ -1,7 +1,7 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Exec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 /usr/lib64/firefox/firefox %u
+Exec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 MOZ_USE_X11=0 MOZ_WEBRENDER=1 MOZ_HW_ACCELERATION_FORCE=1 /usr/lib64/firefox/firefox %u
 Terminal=false
 X-MultipleArgs=false
 Icon=firefox
@@ -32,19 +32,19 @@ X-GNOME-FullName[en_GB]=Mozilla Firefox
 X-GNOME-FullName[es_ES]=Mozilla Firefox
 
 [Desktop Action new-window]
-Exec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 /usr/lib64/firefox/firefox --new-window %u
+Exec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 MOZ_USE_X11=0 MOZ_WEBRENDER=1 MOZ_HW_ACCELERATION_FORCE=1 /usr/lib64/firefox/firefox --new-window %u
 Name=Open a New Window
 Name[en_GB]=Open a New Window
 Name[es_ES]=Abrir en nueva ventana
 
 [Desktop Action new-private-window]
-Exec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 /usr/lib64/firefox/firefox --private-window %u
+Exec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 MOZ_USE_X11=0 MOZ_WEBRENDER=1 MOZ_HW_ACCELERATION_FORCE=1 /usr/lib64/firefox/firefox --private-window %u
 Name=Open New Private Window
 Name[en_GB]=Open New Private Window
 Name[es_ES]=Abrir en nueva ventana privada
 
 [Desktop Action open-profile-manager]
-Exec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 /usr/lib64/firefox/firefox --ProfileManager
+Exec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 MOZ_USE_X11=0 MOZ_WEBRENDER=1 MOZ_HW_ACCELERATION_FORCE=1 /usr/lib64/firefox/firefox --ProfileManager
 Name=Open Profile Manager
 Name[en_GB]=Open Profile Manager
 Name[es_ES]=Abrir administrador de perfiles
