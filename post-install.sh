@@ -112,40 +112,53 @@ blacklist intel_agp
 blacklist intel_gtt
 EOF
 
+sudo tee /etc/modprobe.d/amdgpu.conf  > /dev/null <<'EOF'
+options amdgpu si_support=1 cik_support=0
+options amdgpu dc=1
+EOF
+
 ## microcode
 sudo sed -i 's/^blacklist microcode/#blacklist microcode/' /etc/modprobe.d/amd64-microcode-blacklist.conf
 sudo sed -i 's/^blacklist microcode/#blacklist microcode/' /etc/modprobe.d/intel-microcode-blacklist.conf
 
-## Crear sysctl.conf en /etc/sysctl.d/custom-kernel.conf
-sudo tee /etc/sysctl.d/custom-kernel.conf > /dev/null <<'EOF'
+## Crear sysctl.conf en /etc/sysctl.d/99-custom.conf
+sudo tee /etc/sysctl.d/99-custom.conf > /dev/null <<'EOF'
 # VM settings
 vm.max_map_count = 2147483642
 vm.swappiness = 10
-fs.file-max = 100000
+fs.file-max = 2097152
 
-# Networking - Buffers y rendimiento para enlace gigabit sólido
+# Networking - Buffers and performance for solid gigabit link
 net.core.rmem_max = 33554432
 net.core.wmem_max = 33554432
+net.core.rmem_default = 262144
+net.core.wmem_default = 262144
 net.ipv4.tcp_rmem = 4096 87380 33554432
 net.ipv4.tcp_wmem = 4096 65536 33554432
+net.ipv4.tcp_congestion_control = bbr
 
-# Incrementar tamaño de cola para evitar pérdida en picos
-net.core.netdev_max_backlog = 5000
+# Increase queue size to prevent packet loss during spikes
+net.core.default_qdisc = fq
+net.core.netdev_max_backlog = 8192
 net.core.somaxconn = 1024
 
-# TCP tweaks para reducir TIME_WAIT y mejorar reutilización
-net.ipv4.tcp_max_tw_buckets = 1440000
+# TCP tweaks to reduce TIME_WAIT and improve reuse
+net.ipv4.tcp_max_tw_buckets = 200000
 net.ipv4.tcp_tw_reuse = 1
 net.ipv4.tcp_fin_timeout = 15
 
-# Rango de puertos locales para conexiones efímeras
+# Local port range for ephemeral connections
 net.ipv4.ip_local_port_range = 1024 65535
 
-# Kernel panic después de 30 segundos
-kernel.panic = 30
+# Kernel panic after 60 seconds
+kernel.panic = 60
 EOF
 
 ## Rules /etc/udev/rules.d/
+sudo tee /etc/udev/rules.d/10-eyetoy.rules > /dev/null <<'EOF'
+SUBSYSTEM=="usb", ATTR{idVendor}=="0x054c", ATTR{idProduct}=="0x0155", MODE="0660", GROUP="plugdev"
+EOF
+
 sudo tee /etc/udev/rules.d/20-ledger.rules > /dev/null <<'EOF'
 # HW.1, Nano
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="2581", ATTRS{idProduct}=="1b7c|2b7c|3b7c|4b7c", TAG+="uaccess", TAG+="udev-acl"
@@ -173,29 +186,21 @@ sudo tee /etc/udev/rules.d/51-android.rules > /dev/null <<'EOF'
 #    | grep -Ev ^SUBSYSTEM==usb, ATTR{idVendor}==[0-9a-f]{4}, ENV{adb_user}=yes
 
 # Skip this section below if this device is not connected by USB
-SUBSYSTEM!="usb", GOTO="android_usb_rules_end"
-
 ## OnePlus 8T
+SUBSYSTEM=="usb", ATTR{idVendor}=="22d9", ATTR{idProduct}=="2769", MODE="0666", GROUP="plugdev"
 SUBSYSTEM=="usb", ATTR{idVendor}=="18d1", ATTR{idProduct}=="d00d", MODE="0666", GROUP="plugdev"
-
-LABEL="android_usb_rules_begin"
-
-## Google
-SUBSYSTEM=="usb", ATTR{idVendor}=="18d1", ENV{adb_user}="yes"
-SUBSYSTEM=="usb", ATTR{idVendor}=="04da", ENV{adb_user}="yes"
-
-## Qualcomm
-SUBSYSTEM=="usb", ATTR{idVendor}=="05c6", ATTR{idProduct}=="6769", ENV{adb_user}="yes"
-SUBSYSTEM=="usb", ATTR{idVendor}=="05c6", ATTR{idProduct}=="9025", ENV{adb_user}="yes"
-
-# Enable device as a user device if found
-ENV{adb_user}=="yes", MODE="0660", GROUP="plugdev", TAG+="uaccess"
-
-LABEL="android_usb_rules_end"
 EOF
 
 sudo tee /etc/udev/rules.d/60-arduino.rules > /dev/null <<'EOF'
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="2341", MODE:="0666"
+EOF
+
+sudo tee /etc/udev/rules.d/70-yubikey.rules > /dev/null <<'EOF'
+ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="1050", ATTRS{idProduct}=="0407", MODE="0666"
+EOF
+
+sudo tee /etc/udev/rules.d/80-ps3-memcard.rules > /dev/null <<'EOF'
+SUBSYSTEM=="usb", ATTR{idVendor}=="054c", ATTR{idProduct}=="02ea", MODE="0666", GROUP="plugdev"
 EOF
 
 sudo udevadm control --reload-rules
@@ -204,10 +209,14 @@ sudo udevadm trigger
 ## Fichero hosts
 sudo tee /etc/hosts > /dev/null <<'EOF'
 127.0.0.1	localhost
-127.0.1.1	debian.local	debian
+127.0.1.1	localhost	debian
 
 ## Local
-
+xxx.xxx.xxx.xxx
+xxx.xxx.xxx.xxx
+xxx.xxx.xxx.xxx
+xxx.xxx.xxx.xxx
+xxx.xxx.xxx.xxx
 
 ## DNS Cloudflare
 1.1.1.1		one.one.one.one
@@ -282,10 +291,130 @@ sudo make dkms-install
 echo "ryzen_smu" | sudo tee /etc/modules-load.d/ryzen_smu.conf > /dev/null
 
 ## Soporte GPU AMD
-echo "LIBVA_DRIVER_NAME=radeonsi" | sudo tee /etc/environment.d/90-amdgpu.conf > dev/null
+sudo tee /etc/environment.d/90-amdgpu.conf > /dev/null <<'EOF'
+LIBVA_DRIVER_NAME=radeonsi
+VDPAU_DRIVER=radeonsi
+EOF
 
 ## Firefox con soporte VA-API
-sudo sed -i 's|^Exec=.*|Exec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 /usr/lib/firefox-esr/firefox-esr %u|' /usr/share/applications/firefox-esr.desktop
+sudo tee /usr/share/applications/firefox.desktop > /dev/null <<'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Exec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 /usr/lib/firefox/firefox %u
+Terminal=false
+X-MultipleArgs=false
+Icon=firefox
+StartupWMClass=firefox
+Categories=GNOME;GTK;Network;WebBrowser;
+MimeType=application/json;application/pdf;application/rdf+xml;application/rss+xml;application/x-xpinstall;application/xhtml+xml;application/xml;audio/flac;audio/ogg;audio/webm;image/avif;image/gif;image/jpeg;image/png;image/svg+xml;image/webp;text/html;text/xml;video/ogg;video/webm;x-scheme-handler/chrome;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/mailto;
+StartupNotify=true
+Actions=new-window;new-private-window;open-profile-manager;
+
+Name=Firefox
+Name[en_GB]=Firefox
+Name[es_ES]=Firefox
+
+Comment=Fast and private browser
+Comment[en_GB]=Fast and private browser
+Comment[es_ES]=Navegador rápido y privado
+
+GenericName=Web Browser
+GenericName[en_GB]=Web Browser
+GenericName[es_ES]=Navegador web
+
+Keywords=Internet;WWW;Browser;Web;Explorer;
+Keywords[en_GB]=Internet;WWW;Browser;Web;Explorer;
+Keywords[es_ES]=Internet;WWW;Navegador;Web;Explorador;
+
+X-GNOME-FullName=Mozilla Firefox
+X-GNOME-FullName[en_GB]=Mozilla Firefox
+X-GNOME-FullName[es_ES]=Mozilla Firefox
+
+[Desktop Action new-window]
+Exec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 /usr/lib/firefox/firefox --new-window %u
+Name=Open a New Window
+Name[en_GB]=Open a New Window
+Name[es_ES]=Abrir en nueva ventana
+
+[Desktop Action new-private-window]
+Exec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 /usr/lib/firefox/firefox --private-window %u
+Name=Open New Private Window
+Name[en_GB]=Open New Private Window
+Name[es_ES]=Abrir en nueva ventana privada
+
+[Desktop Action open-profile-manager]
+Exec=env MOZ_WAYLAND_DRM_DEVICE=/dev/dri/renderD128 LIBVA_DRIVER_NAME=radeonsi MOZ_ENABLE_WAYLAND=1 /usr/lib/firefox/firefox --ProfileManager
+Name=Open Profile Manager
+Name[en_GB]=Open Profile Manager
+Name[es_ES]=Abrir administrador de perfiles
+EOF
+
+sudo tee /usr/share/applications/com.google.Chrome.desktop.bck > /dev/null <<'EOF'
+[Desktop Entry]
+Version=1.0
+Name=Google Chrome
+
+GenericName=Web Browser
+GenericName[en]=Web Browser
+GenericName[es]=Navegador web
+
+Comment=Access the Internet
+Comment[en]=Access the Internet
+Comment[es]=Accede a Internet
+
+Exec=/usr/bin/google-chrome-stable \
+--ozone-platform=wayland \
+--enable-features=UseOzonePlatform,VaapiVideoDecoder \
+--ignore-gpu-blocklist \
+--enable-gpu-rasterization \
+--enable-threaded-scrolling \
+--enable-zero-copy \
+--enable-accelerated-video-decode \
+--disable-features=Vulkan,VulkanFromANGLE \
+--disable-background-timer-throttling \
+--disable-renderer-backgrounding \
+--disable-backgrounding-occluded-windows \
+--js-flags="--max-old-space-size=4096"
+
+StartupNotify=true
+Terminal=false
+Icon=google-chrome
+Type=Application
+Categories=Network;WebBrowser;
+MimeType=application/pdf;application/xhtml+xml;application/xml;text/html;text/xml;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/google-chrome;
+Actions=new-window;new-private-window;
+NoDisplay=false
+
+[Desktop Action new-window]
+Name=New Window
+Name[en]=New Window
+Name[es]=Nueva ventana
+Exec=/usr/bin/google-chrome-stable \
+--ozone-platform=wayland \
+--enable-features=UseOzonePlatform,VaapiVideoDecoder \
+--ignore-gpu-blocklist \
+--enable-gpu-rasterization \
+--enable-threaded-scrolling \
+--enable-zero-copy \
+--enable-accelerated-video-decode \
+--disable-features=Vulkan,VulkanFromANGLE \
+--js-flags="--max-old-space-size=4096"
+
+[Desktop Action new-private-window]
+Name=New Incognito Window
+Name[en]=New Incognito Window
+Name[es]=Nueva ventana de incógnito
+Exec=/usr/bin/google-chrome-stable \
+--incognito \
+--ozone-platform=wayland \
+--enable-features=UseOzonePlatform,VaapiVideoDecoder \
+--ignore-gpu-blocklist \
+--enable-gpu-rasterization \
+--enable-threaded-scrolling \
+--disable-features=Vulkan,VulkanFromANGLE \
+--js-flags="--max-old-space-size=4096"
+EOF
 
 ## CoreCtrl
 sudo apt install -y corectrl
@@ -375,13 +504,20 @@ sudo -u $USER gsettings set org.gnome.mutter center-new-windows true
 device="enp5s0"
 sudo tee /etc/systemd/system/offloads-${device}.service > /dev/null <<'EOF'"$service-file" <<EOF
 [Unit]
-Description=Disable GRO/GSO/TSO/LRO in ${INTERFAZ}
-After=network.target
+Description=Disable GRO/GSO/TSO/LRO on ${device}
+Wants=sys-subsystem-net-devices-${device}.device
+After=sys-subsystem-net-devices-${device}.device
 
 [Service]
 Type=oneshot
-ExecStart=/sbin/ethtool -K ${device} gro off gso off tso off lro off
+ExecStartPre=/usr/bin/bash -c 'until ip link show ${device}; do sleep 1; done'
+ExecStart=/usr/bin/ethtool -K ${device} gro off gso off tso off lro off sg off tx-gso-partial off
 RemainAfterExit=yes
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
 
 [Install]
 WantedBy=multi-user.target
