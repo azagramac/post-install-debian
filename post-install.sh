@@ -350,7 +350,7 @@ Name[en_GB]=Open Profile Manager
 Name[es_ES]=Abrir administrador de perfiles
 EOF
 
-sudo tee /usr/share/applications/com.google.Chrome.desktop.bck > /dev/null <<'EOF'
+sudo tee /usr/share/applications/com.google.Chrome.desktop > /dev/null <<'EOF'
 [Desktop Entry]
 Version=1.0
 Name=Google Chrome
@@ -414,6 +414,27 @@ Exec=/usr/bin/google-chrome-stable \
 --enable-threaded-scrolling \
 --disable-features=Vulkan,VulkanFromANGLE \
 --js-flags="--max-old-space-size=4096"
+EOF
+
+sudo tee /usr/share/applications/antigravity.desktop > /dev/null <<EOF
+[Desktop Entry]
+Name=Antigravity
+Comment=Google Antigravity
+Exec=/usr/share/antigravity/antigravity %F
+Icon=${HOME}/.antigravity/google-antigravity.png
+Type=Application
+StartupNotify=false
+StartupWMClass=Antigravity
+Categories=Development;Utility;
+MimeType=application/x-antigravity-workspace;
+Actions=new-empty-window;
+Keywords=vscode;
+
+[Desktop Action new-empty-window]
+Name=New Empty Window
+Name[es]=Nueva ventana vacía
+Exec=/usr/share/antigravity/antigravity --new-window %F
+Icon=${HOME}/.antigravity/google-antigravity.png
 EOF
 
 ## CoreCtrl
