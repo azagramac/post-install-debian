@@ -23,6 +23,7 @@ EOF
 sudo tee /etc/apt/sources.list.d/debian-backports.sources > /dev/null <<'EOF'
 Types: deb deb-src
 URIs: http://deb.debian.org/debian
+
 Suites: trixie-backports
 Components: main contrib non-free non-free-firmware
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
@@ -175,17 +176,6 @@ ACTION=="add", SUBSYSTEM=="scsi_host", KERNEL=="host*", ATTR{link_power_manageme
 EOF
 
 sudo tee /etc/udev/rules.d/51-android.rules > /dev/null <<'EOF'
-# These rules refer: https://developer.android.com/studio/run/device.html
-# and include many suggestions from Arch Linux, GitHub and other Communities.
-# Latest version can be found at: https://github.com/M0Rf30/android-udev-rules
-
-# check the syntax of this file using:
-#  grep -v ^# 51-android.rules \
-#    | grep -Ev ^ \
-#    | grep -Ev ^SUBSYSTEM==usb, ATTR{idVendor}==[0-9a-f]{4}, ATTR{idProduct}==[0-9a-f]{4}, ENV{adb_user}=yes \
-#    | grep -Ev ^SUBSYSTEM==usb, ATTR{idVendor}==[0-9a-f]{4}, ENV{adb_user}=yes
-
-# Skip this section below if this device is not connected by USB
 ## OnePlus 8T
 SUBSYSTEM=="usb", ATTR{idVendor}=="22d9", ATTR{idProduct}=="2769", MODE="0666", GROUP="plugdev"
 SUBSYSTEM=="usb", ATTR{idVendor}=="18d1", ATTR{idProduct}=="d00d", MODE="0666", GROUP="plugdev"
@@ -201,6 +191,10 @@ EOF
 
 sudo tee /etc/udev/rules.d/80-ps3-memcard.rules > /dev/null <<'EOF'
 SUBSYSTEM=="usb", ATTR{idVendor}=="054c", ATTR{idProduct}=="02ea", MODE="0666", GROUP="plugdev"
+EOF
+
+sudo tee /etc/udev/rules.d/90-xgecu-t48.rules > /dev/null <<'EOF'
+SUBSYSTEM=="usb", ATTR{idVendor}=="a466", ATTR{idProduct}=="0a53", MODE="0666", GROUP="plugdev"
 EOF
 
 sudo udevadm control --reload-rules
