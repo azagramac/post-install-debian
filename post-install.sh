@@ -183,28 +183,31 @@ EOF
 
 sudo tee /etc/udev/rules.d/60-arduino.rules > /dev/null <<'EOF'
 # ------------------------------------------------------------
-# Arduino GIGA R1 WiFi / Mbed OS (CDC ACM normal)
+# Arduino GIGA R1 WiFi (CDC ACM)
 # ------------------------------------------------------------
 SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0266", \
-  MODE="0666", GROUP="dialout", TAG+="uaccess", SYMLINK+="arduino_giga"
+  MODE="0666", GROUP="dialout", TAG+="uaccess"
 
-SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0366", \
-  MODE="0666", GROUP="dialout", TAG+="uaccess", SYMLINK+="arduino_giga"
-  
-SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="df11", \
-  MODE="0666", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0366", \
+  MODE="0666", GROUP="dialout", TAG+="uaccess"
 
 # ------------------------------------------------------------
-# Arduino UNO original (CDC ACM)
+# STM32 DFU (GIGA / STM32H7)
+# ------------------------------------------------------------
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", \
+  MODE="0666", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1"
+
+# ------------------------------------------------------------
+# Arduino UNO
 # ------------------------------------------------------------
 SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0043", \
-  MODE="0666", GROUP="dialout", TAG+="uaccess", SYMLINK+="arduino_uno"
+  MODE="0666", GROUP="dialout", TAG+="uaccess"
 
 # ------------------------------------------------------------
-# CH340 / CH341 USB-Serial
+# CH340
 # ------------------------------------------------------------
 SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", \
-  MODE="0666", GROUP="dialout", TAG+="uaccess", SYMLINK+="ch340"
+  MODE="0666", GROUP="dialout", TAG+="uaccess"
 EOF
 
 sudo tee /etc/udev/rules.d/70-yubikey.rules > /dev/null <<'EOF'
