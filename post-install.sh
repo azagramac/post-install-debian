@@ -182,7 +182,29 @@ SUBSYSTEM=="usb", ATTR{idVendor}=="18d1", ATTR{idProduct}=="d00d", MODE="0666", 
 EOF
 
 sudo tee /etc/udev/rules.d/60-arduino.rules > /dev/null <<'EOF'
-SUBSYSTEMS=="usb", ATTRS{idVendor}=="2341", MODE:="0666"
+# ------------------------------------------------------------
+# Arduino GIGA R1 WiFi / Mbed OS (CDC ACM normal)
+# ------------------------------------------------------------
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0266", \
+  MODE="0666", GROUP="dialout", TAG+="uaccess", SYMLINK+="arduino_giga"
+
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0366", \
+  MODE="0666", GROUP="dialout", TAG+="uaccess", SYMLINK+="arduino_giga"
+  
+SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="df11", \
+  MODE="0666", GROUP="plugdev", TAG+="uaccess"
+
+# ------------------------------------------------------------
+# Arduino UNO original (CDC ACM)
+# ------------------------------------------------------------
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0043", \
+  MODE="0666", GROUP="dialout", TAG+="uaccess", SYMLINK+="arduino_uno"
+
+# ------------------------------------------------------------
+# CH340 / CH341 USB-Serial
+# ------------------------------------------------------------
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", \
+  MODE="0666", GROUP="dialout", TAG+="uaccess", SYMLINK+="ch340"
 EOF
 
 sudo tee /etc/udev/rules.d/70-yubikey.rules > /dev/null <<'EOF'
@@ -245,7 +267,7 @@ sudo apt install -y build-essential git dkms make cmake linux-headers-$(uname -r
     amd64-microcode firmware-amd-graphics firmware-iwlwifi firmware-linux firmware-linux-free firmware-linux-nonfree \
     firmware-misc-nonfree firmware-realtek util-linux cifs-utils libfuse2 sysfsutils zlib1g-dev libbz2-dev ethtool \
     libreadline-dev libsqlite3-dev libncursesw5-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev libelf-dev \
-    pkg-config iperf3 libiperf0 sudo apt-transport-https ca-certificates curl wget dirmngr gnupg gnupg-agent openssl libssl-dev gdisk tpm2-tools cryptsetup lvm2 \
+    pkg-config iperf3 libiperf0 sudo apt-transport-https ca-certificates curl wget dirmngr gnupg gnupg-agent openssl libssl-dev gdisk tpm2-tools dfu-util dfu-programmer cryptsetup lvm2 \
     sshfs net-tools libgbm1 libgjs0g jq xz-utils tk-dev inxi ttf-mscorefonts-installer bluez bluez-tools pipewire-audio-client-libraries blueman avrdude qrencode
 
 ## Instalar software
