@@ -183,13 +183,28 @@ EOF
 
 sudo tee /etc/udev/rules.d/60-arduino.rules > /dev/null <<'EOF'
 # ------------------------------------------------------------
+# Arduino UNO Q
+# ------------------------------------------------------------
+# Operating mode
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0078", \
+  MODE="0666", GROUP="dialout", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1", \
+  ENV{ID_MM_CANDIDATE}="0"
+
+# EDL mode
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="9008", \
+  MODE="0666", GROUP="dialout", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1", \
+  ENV{ID_MM_CANDIDATE}="0"
+
+# ------------------------------------------------------------
 # Arduino GIGA R1 WiFi (CDC ACM)
 # ------------------------------------------------------------
 SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0266", \
-  MODE="0666", GROUP="dialout", TAG+="uaccess"
+  MODE="0666", GROUP="dialout", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1", \
+  ENV{ID_MM_CANDIDATE}="0"
 
 SUBSYSTEM=="usb", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0366", \
-  MODE="0666", GROUP="dialout", TAG+="uaccess"
+  MODE="0666", GROUP="dialout", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1", \
+  ENV{ID_MM_CANDIDATE}="0"
 
 # ------------------------------------------------------------
 # STM32 DFU (GIGA / STM32H7)
