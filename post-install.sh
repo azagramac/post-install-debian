@@ -1,9 +1,48 @@
 ## añadir usuario a sudo
 usermod -aG sudo,dialout,video,tty,plugdev $USER
+reboot
 
 ## Driver Sound Blaster Z
 # Descargar .bin de https://mega.nz/file/hcQVDDJL#B3QkvwyUkHSDwN-7C9tKndipYyuGQioQMO64oyvCEEU
 sudo cp -rf ctefx-desktop.bin /usr/lib/firmware/
+
+pactl list cards short
+# $ pactl list cards short
+# 50      alsa_card.pci-0000_06_00.0      alsa
+# 51      alsa_card.pci-0000_0d_00.1      alsa
+# 52      alsa_card.usb-Apple__Inc._EarPods_L24GG2R127-00 alsa
+# $ pactl list cards short | awk '$1 == 50 {print $2}'
+
+mkdir -p ~/.config/pipewire/pipewire.conf.d
+tee ~/.config/pipewire/pipewire.conf.d/90-clock-rate.conf > /dev/null <<'EOF'
+context.properties = {
+    default.clock.rate          = 192000
+    default.clock.allowed-rates = [ 44100 48000 96000 192000 ]
+}
+EOF
+
+mkdir -p ~/.config/wireplumber/wireplumber.conf.d
+tee ~/.config/wireplumber/wireplumber.conf.d/60-soundblaster-192khz.conf > /dev/null <<'EOF'
+monitor.alsa.rules = [
+  {
+    matches = [
+      {
+        device.name = "alsa_card.pci-0000_06_00.0"
+      }
+    ]
+    actions = {
+      update-props = {
+        audio.format = "S32LE"
+        audio.rate = 192000
+        audio.channels = 2
+        api.alsa.period-size = 1024
+        api.alsa.headroom = 0
+        session.suspend-timeout-seconds = 0
+      }
+    }
+  }
+]
+EOF
 
 ## Instalar vim
 sudo apt update && sudo apt install -y vim
@@ -23,7 +62,6 @@ EOF
 sudo tee /etc/apt/sources.list.d/debian-backports.sources > /dev/null <<'EOF'
 Types: deb deb-src
 URIs: http://deb.debian.org/debian
-
 Suites: trixie-backports
 Components: main contrib non-free non-free-firmware
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
@@ -36,16 +74,22 @@ sudo dpkg -i deb-multimedia-keyring_2024.9.1_all.deb
 sudo tee /etc/apt/sources.list.d/debian-multimedia.sources > /dev/null <<'EOF'
 Types: deb deb-src
 URIs: https://www.deb-multimedia.org
-Suites: deb-multimedia
-Components: trixie main non-free
+Suites: trixie
+Components: main non-free
 Signed-By: /usr/share/keyrings/deb-multimedia-keyring.pgp
+EOF
+
+sudo tee /etc/apt/preferences.d/debian-multimedia.pref > /dev/null <<'EOF'
+Package: *
+Pin: origin "www.deb-multimedia.org"
+Pin-Priority: 50
 EOF
 
 ## Actualizar repositorios
 sudo apt update && sudo apt upgrade -y
 
 ## Añadir a GRUB /etc/default/grub
-sudo sed -i 's|^GRUB_CMDLINE_LINUX_DEFAULT=".*"|GRUB_CMDLINE_LINUX_DEFAULT="quiet amdgpu.ppfeaturemask=0xffffffff amd_pstate=passive zswap.enabled=1"|' /etc/default/grub
+sudo sed -i 's|^GRUB_CMDLINE_LINUX_DEFAULT=".*"|GRUB_CMDLINE_LINUX_DEFAULT="quiet amdgpu.ppfeaturemask=0xffffffff zswap.enabled=1 zswap.compressor=lzo"|' /etc/default/grub
 sudo update-grub
 
 ## Establecer SepaceFun theme
@@ -68,24 +112,29 @@ sudo cp /etc/fstab /etc/fstab.bak.$(date +%F-%T) && sudo tee /etc/fstab > /dev/n
 # Please run 'systemctl daemon-reload' after making changes here.
 #
 # <file system> <mount point>   <type>  <options>       <dump>  <pass>
-
 # Linux, /
-UUID=$ROOT_UUID	/	ext4	relatime,errors=remount-ro	0	1
+UUID=$ROOT_UUID       /               ext4    defaults,noatime,errors=remount-ro      0       1
 
-# swap, /swapfile
-/swapfile	none	swap	sw	0	0
+# /boot
+UUID=$BOOT_UUID       /boot           ext4    defaults        0       2
 
-# boot, /boot
-UUID=$BOOT_UUID	/boot	ext4	relatime	0	2
-
-# EFI, /boot/efi
-UUID=$EFI_UUID	/boot/efi	vfat	umask=0077	0	1
+# /boot/efi
+UUID=$EFI_UUID                                  /boot/efi       vfat    umask=0077      0       1
 
 # Home, /home
-UUID=$HOME_UUID	/home	ext4	relatime	0	2
+UUID=$HOME_UUID	                                /home	ext4	    defaults,noatime	      0	      2
+
+# /opt/games
+UUID=4c9404ef-18de-4718-ac93-65b17156271d       /opt/games      ext4    defaults,noatime        0       2
+
+# swap
+UUID=b589268d-9b53-438d-a2c5-7b414744cb7b       none            swap    sw              0       0
+
+# cd-rom
+/dev/sr0                                        /media/cdrom0   udf,iso9660 user,noauto 0       0
 
 # NFS
-$IP_NAS:/volume1/folder    /mnt/nas/folder	nfs	rw,vers=4,noatime,hard,x-systemd.automount,x-systemd.idle-timeout=300,_netdev	0	0
+$IP_NAS:/volume1/folder                         /mnt/nas/folder	nfs	rw,vers=4,noatime,hard,x-systemd.automount,x-systemd.idle-timeout=300,_netdev	0	0
 EOF
 
 ## Añadir blacklist
@@ -119,8 +168,14 @@ options amdgpu dc=1
 EOF
 
 ## microcode
-sudo sed -i 's/^blacklist microcode/#blacklist microcode/' /etc/modprobe.d/amd64-microcode-blacklist.conf
-sudo sed -i 's/^blacklist microcode/#blacklist microcode/' /etc/modprobe.d/intel-microcode-blacklist.conf
+sudo rm -rf /etc/modprobe.d/amd64-microcode-blacklist.conf
+sudo rm -rf /etc/modprobe.d/intel-microcode-blacklist.conf
+
+## Deshabilitar modulos KVM
+sudo tee /etc/modprobe.d/blacklist-kvm.conf > /dev/null <<'EOF'
+blacklist kvm
+blacklist kvm_amd
+EOF
 
 ## Crear sysctl.conf en /etc/sysctl.d/99-custom.conf
 sudo tee /etc/sysctl.d/99-custom.conf > /dev/null <<'EOF'
@@ -153,6 +208,12 @@ net.ipv4.ip_local_port_range = 1024 65535
 
 # Kernel panic after 60 seconds
 kernel.panic = 60
+EOF
+
+## Soporte GPU AMD
+sudo tee /etc/environment.d/90-amdgpu.conf > /dev/null <<'EOF'
+LIBVA_DRIVER_NAME=radeonsi
+VDPAU_DRIVER=radeonsi
 EOF
 
 ## Rules /etc/udev/rules.d/
@@ -277,24 +338,94 @@ ff02::1 ip6-allnodes
 ff02::2 ip6-allrouters
 EOF
 
+## Disable offloads
+device="enp5s0"
+sudo tee /etc/systemd/system/offloads-${device}.service > /dev/null <<'EOF'"$service-file" <<EOF
+[Unit]
+Description=Disable GRO/GSO/TSO/LRO on ${device}
+Wants=sys-subsystem-net-devices-${device}.device
+After=sys-subsystem-net-devices-${device}.device
+
+[Service]
+Type=oneshot
+ExecStartPre=/usr/bin/bash -c 'until ip link show ${device}; do sleep 1; done'
+ExecStart=/usr/bin/ethtool -K ${device} gro off gso off tso off lro off sg off tx-gso-partial off
+RemainAfterExit=yes
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable "offloads-${device}.service"
+systemctl start "offloads-${device}.service"
+systemctl status "offloads-${device}.service" --no-pager
+
 ## Actualizar repositorios y sistema
 sudo apt update && sudo apt upgrade -y
 
 ## Instalar paquetes
-sudo apt install -y build-essential git dkms make cmake linux-headers-$(uname -r) bc bison flex rsync nfs-common samba \
-    amd64-microcode firmware-amd-graphics firmware-iwlwifi firmware-linux firmware-linux-free firmware-linux-nonfree \
-    firmware-misc-nonfree firmware-realtek util-linux cifs-utils libfuse2 sysfsutils zlib1g-dev libbz2-dev ethtool \
-    libreadline-dev libsqlite3-dev libncursesw5-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev libelf-dev \
-    pkg-config iperf3 libiperf0 sudo apt-transport-https ca-certificates curl wget dirmngr gnupg gnupg-agent openssl libssl-dev gdisk tpm2-tools dfu-util dfu-programmer cryptsetup lvm2 \
-    sshfs net-tools libgbm1 libgjs0g jq xz-utils tk-dev inxi ttf-mscorefonts-installer bluez bluez-tools pipewire-audio-client-libraries blueman avrdude qrencode
+sudo apt install -y build-essential cmake pkg-config dkms linux-headers-$(uname -r) bc bison flex rsync \
+    libelf-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev libncursesw5-dev libxml2-dev \
+    libxmlsec1-dev libffi-dev liblzma-dev libssl-dev tk-dev
 
-## Instalar software
-sudo apt install -t trixie-backports -y h264enc libx264-165 libx264-dev libx265-215 libx265-dev vulkan-tools \
-    vulkan-validationlayers mesa-utils mesa-va-drivers mesa-vdpau-drivers mesa-vulkan-drivers mesa-opencl-icd libgl1-mesa-dri \
-    libglapi-mesa libglx-mesa0 libegl-mesa0 duf nmap nvme-cli dexdump lm-sensors htop vlc libbdplus0 libaacs0 libaacs-dev lame libbluray2 \
-    ffmpeg flac gparted meld filezilla keepassxc gimp gimp-help-es gimp-data-extras v4l-utils libdvd-pkg libdvdread8 papirus-icon-theme python3 python3-pip \
-    python3-pil bpytop python3-psutil libglib2.0-dev-bin gjs libxatracker2 ttf-mscorefonts-installer rar unrar zip unzip bzip2 fastfetch \
-    dvd+rw-tools libdvdcss-dev libdvdcss2 gnome-shell-extension-manager brasero cdrdao dvdauthor dvdbackup gnome-maps gnome-weather vainfo transmission 
+sudo apt install -y python3 python3-pip python3-pil python3-psutil \
+    libglib2.0-dev-bin gjs dexdump
+
+sudo apt install -y amd64-microcode firmware-amd-graphics firmware-iwlwifi firmware-linux \
+    firmware-linux-free firmware-linux-nonfree firmware-misc-nonfree firmware-realtek util-linux ethtool
+
+sudo apt install -y nfs-common samba cifs-utils sshfs net-tools iperf3 libiperf0 nmap \
+    lm-sensors htop bpytop v4l-utils
+
+sudo apt install -y libfuse2 sysfsutils
+sudo apt install -y cryptsetup lvm2 tpm2-tools gdisk
+sudo apt install -y dfu-util dfu-programmer avrdude
+sudo apt install -y ca-certificates curl wget dirmngr gnupg openssl
+sudo apt install -y sudo jq xz-utils inxi qrencode
+sudo apt install -y libgbm1 libgjs0g bluez bluez-tools pipewire-audio-client-libraries blueman
+sudo apt install -y ttf-mscorefonts-installer
+sudo apt install -y duf nvme-cli gparted smartmontools
+sudo apt install -y code
+
+sudo apt install -y vulkan-tools gamemode vulkan-validationlayers \
+    mesa-utils mesa-va-drivers mesa-vdpau-drivers mesa-vulkan-drivers mesa-opencl-icd \
+    libgl1-mesa-dri libglapi-mesa libglx-mesa0 libegl-mesa0 libxatracker2 vainfo
+
+sudo apt install -y h264enc libx264-165 libx264-dev libx265-215 libx265-dev \
+    lame ffmpeg flac vlc libbdplus0 libaacs0 libaacs-dev libbluray2
+
+sudo apt install -y libdvd-pkg libdvdread8 libdvdcss-dev libdvdcss2 \
+    dvd+rw-tools brasero cdrdao dvdauthor dvdbackup
+
+sudo apt install -y meld filezilla keepassxc gimp gimp-help-es gimp-data-extras transmission fastfetch
+sudo apt install -y pcscd pcsc-tools libpam-u2f pamu2fcfg yubico-piv-tool yubikey-manager
+
+## Instalar Google Chrome
+wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo dpkg -i google-chrome-stable_current_amd64.deb
+sudo apt -f install -y
+
+## Instalar software mediante backports
+# sudo apt install -t trixie-backports <paquete>
+# example: sudo apt install -t trixie-backports -y ffmpeg
+
+# Backports recomendado:
+# sudo apt install -t trixie-backports -y \
+#     mesa-va-drivers \
+#     mesa-vdpau-drivers \
+#     mesa-vulkan-drivers \
+#     mesa-opencl-icd \
+#     libgl1-mesa-dri \
+#     libglapi-mesa \
+#     libglx-mesa0 \
+#     libegl-mesa0 \
+#     libxatracker2
 
 ## Configurar libdvd-pkg DVD
 dpkg-reconfigure libdvd-pkg
@@ -319,16 +450,11 @@ sudo apt install flatpak -y
 sudo apt install gnome-software-plugin-flatpak
 sudo -u $USER flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
+## Opcional
 clone https://gitlab.com/leogx9r/ryzen_smu.git
 cd ryzen_smu/
 sudo make dkms-install
 echo "ryzen_smu" | sudo tee /etc/modules-load.d/ryzen_smu.conf > /dev/null
-
-## Soporte GPU AMD
-sudo tee /etc/environment.d/90-amdgpu.conf > /dev/null <<'EOF'
-LIBVA_DRIVER_NAME=radeonsi
-VDPAU_DRIVER=radeonsi
-EOF
 
 ## Firefox con soporte VA-API
 sudo tee /usr/share/applications/firefox.desktop > /dev/null <<'EOF'
@@ -485,14 +611,6 @@ polkit.addRule(function(action, subject) {
 })
 EOF
 
-## Instalar Visual Studio Code
-sudo apt install -y code
-
-## Instalar Google Chrome
-wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-sudo dpkg -i google-chrome-stable_current_amd64.deb
-sudo apt -f install -y
-
 ## Instalar VirtualBox
 wget -O- https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo gpg --yes --output /usr/share/keyrings/oracle-virtualbox-2016.gpg
 sudo tee /etc/apt/sources.list.d/virtualbox-oracle.list > /dev/null <<'EOF'
@@ -504,12 +622,6 @@ sudo VBoxManage extpack install --replace Oracle_VirtualBox_Extension_Pack-7.2.0
 VBoxManage list extpacks
 sudo usermod -aG vboxusers $USER
 
-## Deshabilitar modulos KVM
-sudo tee /etc/modprobe.d/blacklist-kvm.conf > /dev/null <<'EOF'
-blacklist kvm
-blacklist kvm_amd
-EOF
-
 ## Instalar Spotify
 curl -sS https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg
 sudo tee /etc/apt/sources.list.d/spotify.list > /dev/null <<'EOF'
@@ -520,9 +632,6 @@ sudo apt install -y spotify-client
 
 ## Instalar binario repo, Android AOSP
 curl https://storage.googleapis.com/git-repo-downloads/repo > repo && chmod a+x repo && sudo mv repo /usr/local/bin/repo
-
-## Instalar Yubikey
-sudo apt install pcscd pcsc-tools libpam-u2f pamu2fcfg yubico-piv-tool yubikey-manager
 
 ## Instalar Wireshark
 sudo apt install -y wireshark
@@ -555,89 +664,112 @@ sudo -u $USER gsettings set org.gnome.settings-daemon.plugins.power sleep-inacti
 sudo -u $USER gsettings set org.gnome.desktop.session idle-delay 900
 sudo -u $USER gsettings set org.gnome.mutter center-new-windows true
 
-## Disable offloads
-device="enp5s0"
-sudo tee /etc/systemd/system/offloads-${device}.service > /dev/null <<'EOF'"$service-file" <<EOF
-[Unit]
-Description=Disable GRO/GSO/TSO/LRO on ${device}
-Wants=sys-subsystem-net-devices-${device}.device
-After=sys-subsystem-net-devices-${device}.device
-
-[Service]
-Type=oneshot
-ExecStartPre=/usr/bin/bash -c 'until ip link show ${device}; do sleep 1; done'
-ExecStart=/usr/bin/ethtool -K ${device} gro off gso off tso off lro off sg off tx-gso-partial off
-RemainAfterExit=yes
-
-NoNewPrivileges=true
-PrivateTmp=true
-ProtectSystem=full
-ProtectHome=true
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl daemon-reload
-systemctl enable "offloads-${device}.service"
-systemctl start "offloads-${device}.service"
-systemctl status "offloads-${device}.service" --no-pager
-
 ## Verificar
-echo -e "\n[GPU: info resumida]"
+#!/bin/bash
+
+echo -e "\n========== GPU =========="
 inxi -G
 
-echo -e "\n[VA-API / aceleración de vídeo]"
-vainfo | grep -E "VAProfile|Driver"
+echo -e "\n========== VA-API / ACELERACIÓN DE VÍDEO =========="
+if command -v vainfo >/dev/null 2>&1; then
+    vainfo 2>/dev/null | grep -E 'Driver version|VAProfile' || \
+        echo "No se pudo obtener información de VA-API"
+else
+    echo "vainfo no está instalado"
+fi
 
-echo -e "\n[Vulkan: info resumida de GPU]"
-vulkaninfo 2>/dev/null | grep -E "GPU id|GPU Name|driverVersion" | head -n 10
+echo -e "\n========== VULKAN =========="
+if command -v vulkaninfo >/dev/null 2>&1; then
+    vulkaninfo 2>/dev/null |
+        grep -E 'GPU id|deviceName|driverVersion' |
+        head -n 15
+else
+    echo "vulkaninfo no está instalado"
+fi
 
-echo -e "\n[FFmpeg: aceleraciones de hardware disponibles]"
-ffmpeg -hide_banner -hwaccels
+echo -e "\n========== FFMPEG / ACELERACIÓN HARDWARE =========="
+if command -v ffmpeg >/dev/null 2>&1; then
+    ffmpeg -hide_banner -hwaccels
+else
+    echo "ffmpeg no está instalado"
+fi
 
-echo -e "\n[Módulos cargados]"
-for module in k10temp ryzen_smu microcode; do
-    if lsmod | grep -q "^$module"; then
+echo -e "\n========== MICROCODE =========="
+
+# El microcode NO es un módulo.
+if grep -q '^CONFIG_MICROCODE=y' /boot/config-"$(uname -r)" 2>/dev/null; then
+    echo "Soporte de microcode en kernel: integrado ✅"
+else
+    echo "Soporte de microcode en kernel: no encontrado ⚠"
+fi
+
+MICROCODE=$(grep -m1 'microcode' /proc/cpuinfo | awk '{print $3}')
+
+if [ -n "$MICROCODE" ]; then
+    echo "Microcode CPU: $MICROCODE ✅"
+else
+    echo "Microcode CPU: no detectado ❌"
+fi
+
+if dmesg 2>/dev/null | grep -qi 'microcode'; then
+    dmesg 2>/dev/null | grep -i 'microcode' | tail -n 3
+else
+    echo "No se encontró información de microcode en dmesg"
+fi
+
+echo -e "\n========== MÓDULOS CPU =========="
+
+for module in k10temp ryzen_smu; do
+    if lsmod | grep -q "^${module}[[:space:]]"; then
         echo "Módulo $module: cargado ✅"
     else
-        echo "Módulo $module: NO cargado ❌"
+        echo "Módulo $module: NO cargado ⚠"
     fi
 done
 
-echo -e "\n[Wi-Fi / Bluetooth]"
-for module in iwlwifi btusb; do
-    if lsmod | grep -q "^$module"; then
-        STATUS="cargado ✅"
+echo -e "\n========== WI-FI / BLUETOOTH =========="
+
+check_rfkill() {
+    local type="$1"
+    local name="$2"
+
+    if ! command -v rfkill >/dev/null 2>&1; then
+        echo "rfkill no está instalado"
+        return
+    fi
+
+    local blocked
+    blocked=$(rfkill list "$type" 2>/dev/null |
+        grep -i "Soft blocked" |
+        awk '{print $3}' |
+        head -n 1)
+
+    if [ "$blocked" = "no" ]; then
+        echo "$name: activo 🟢"
+    elif [ "$blocked" = "yes" ]; then
+        echo "$name: Soft blocked ⚠"
     else
-        STATUS="NO cargado ❌"
+        echo "$name: estado no detectado"
     fi
+}
 
-    case $module in
-        iwlwifi)
-            BLOCKED=$(rfkill list wifi | grep -i "Soft blocked" | awk '{print $3}')
-            if [ "$BLOCKED" = "no" ]; then
-                BLOCK_STATUS="activo 🟢"
-            else
-                BLOCK_STATUS="bloqueado ⚠️"
-            fi
-            echo "Módulo Wi-Fi ($module): $STATUS, Soft blocked: $BLOCK_STATUS"
-            ;;
-        btusb)
-            BLOCKED=$(rfkill list bluetooth | grep -i "Soft blocked" | awk '{print $3}')
-            if [ "$BLOCKED" = "no" ]; then
-                BLOCK_STATUS="activo 🟢"
-            else
-                BLOCK_STATUS="bloqueado ⚠️"
-            fi
-            echo "Módulo Bluetooth ($module): $STATUS, Soft blocked: $BLOCK_STATUS"
-            ;;
-    esac
+for module in iwlwifi btusb; do
+    if lsmod | grep -q "^${module}[[:space:]]"; then
+        echo "Módulo $module: cargado ✅"
+    else
+        echo "Módulo $module: NO cargado ⚠"
+    fi
 done
+
+check_rfkill wifi "Wi-Fi"
+check_rfkill bluetooth "Bluetooth"
+
+echo -e "\n========== FIN =========="
 
 ## Limpiar y reiniciar
-sudo apt clean all
-sudo apt autoremove -y
-sudo apt --purge autoremove -y
-sudo rm -rf ~/.cache/thumbnails/* ~/.cache/* /var/tmp/* /tmp/*
-sync && sudo reboot
+sudo apt clean
+sudo apt autoremove --purge -y
+rm -rf ~/.cache/thumbnails/*
+sudo systemd-tmpfiles --clean
+sync
+sudo reboot
